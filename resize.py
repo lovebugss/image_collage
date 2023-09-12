@@ -5,8 +5,46 @@ import os
 from collage import Layout, Coordinate, ImageInfo, collages
 
 
+def rotate_image(img):
+    if hasattr(img, '_getexif'):
+        exif = img._getexif()
+        if exif is not None:
+            orientation = exif.get(0x0112)
+            if orientation is not None:
+                if orientation == 1:
+                    # 正常方向，无需旋转
+                    pass
+                elif orientation == 3:
+                    # 需要旋转180度
+                    img = img.transpose(Image.ROTATE_180)
+                elif orientation == 6:
+                    # 需要顺时针旋转270度
+                    img = img.transpose(Image.ROTATE_270)
+                elif orientation == 8:
+                    # 需要顺时针旋转90度
+                    img = img.transpose(Image.ROTATE_90)
+    return img
+
+
 def get_image_size(path):
     with Image.open(path) as img:
+        if hasattr(img, '_getexif'):
+            exif = img._getexif()
+            if exif is not None:
+                orientation = exif.get(0x0112)
+                if orientation is not None:
+                    if orientation == 1:
+                        # 正常方向，无需旋转
+                        pass
+                    elif orientation == 3:
+                        # 需要旋转180度
+                        img = img.transpose(Image.ROTATE_180)
+                    elif orientation == 6:
+                        # 需要顺时针旋转270度
+                        img = img.transpose(Image.ROTATE_270)
+                    elif orientation == 8:
+                        # 需要顺时针旋转90度
+                        img = img.transpose(Image.ROTATE_90)
         size = img.size
         print(f"当前图片:  {path}, size: {size}")
         return size
@@ -105,9 +143,10 @@ def image_collage(image_folder: str, image_size=(1200, 1800), layout_list=None, 
         print("拼贴图长度", len(collage))
         collage_image = Image.new('RGB', image_size)
         for image_info, coordinate in collage:
-            print("当前图片: ", image_info.path)
-            print("当前坐标: ", coordinate.x, coordinate.y)
+            print("当前图片: ", image_info.path, image_info.width, image_info.height)
+            print("当前坐标: ", coordinate.width, coordinate.height, coordinate.x, coordinate.y)
             image = Image.open(image_info.path)
+            image = rotate_image(image)
             image = resize_image(image, coordinate.width, coordinate.height)
             collage_image.paste(image, (coordinate.x, coordinate.y))
             if callback:
