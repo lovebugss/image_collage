@@ -67,7 +67,7 @@ class GenerateThread(QThread):
         return image_files
 
 
-class MyWindow(QMainWindow):
+class ImageCollage(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -416,6 +416,6 @@ class MyWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MyWindow()
+    window = ImageCollage()
     window.show()
     sys.exit(app.exec())
