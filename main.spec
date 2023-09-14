@@ -6,9 +6,9 @@ block_cipher = None
 
 a = Analysis(
     ['main.py', 'resize.py','collage.py'],
-    pathex=[("D:\\workspace\\pythonProject\\image_collage")],
+    pathex=[("/Users/renjp/Documents/workspace/image_collage")],
     binaries=[],
-    datas = [('./images\\*.png', 'images'), ],
+    datas = [('./images/*.png', 'images'), ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,7 +35,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

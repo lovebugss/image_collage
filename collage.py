@@ -52,10 +52,11 @@ def collages(images, layouts, size=(1200, 1800)):
     first = images[0]
     while len(images) >= len(layouts):
         last = images[-1]
-        if first.path == last.path:
+        print("last", last)
+        if last is None or first.path == last.path:
             break
         collage = generate_collage(images, layouts)
-        if collage is not None:
+        if collage is not None and len(collage) > 0:
             print("collage len: ", len(collage))
             result.append(collage)
 
@@ -85,7 +86,7 @@ def generate_collage(images, layouts):
             collage.extend(collage_images)
         else:
             print("跳出布局循环")
-            images.extend(collage_images[0])
+            # images.extend([i[0] for i in collage_images])
             break  # 如果无法填充完整布局，跳出循环
 
     return collage
@@ -106,9 +107,8 @@ def find_suitable_image(images, coordinate):
         #         (abs(desired_aspect_ratio - image_aspect_ratio) < 0.01 or
         #          (is_horizontal_coordinate and is_horizontal_image) or
         #          (not is_horizontal_coordinate and not is_horizontal_image))):
-        if (image.width >= coordinate.width and image.height >= coordinate.height and
-                (abs(desired_aspect_ratio - image_aspect_ratio) < 0.01
-                 or (is_horizontal_coordinate and is_horizontal_image))):
+        # if (image.width >= coordinate.width and image.height >= coordinate.height and
+        if(abs(desired_aspect_ratio - image_aspect_ratio) < 0.01 or (is_horizontal_coordinate and is_horizontal_image)):
             # 找到合适的图片，满足要求
             print("查找到合适图片")
             images.remove(image)  # 从可用图片列表中移除

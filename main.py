@@ -72,8 +72,8 @@ class ImageCollage(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("图片生成工具")
-        self.setWindowIcon(QIcon(os.path.join(basedir, "images/icon.png")))  # 替换成你的应用程序图标文件
-        self.setGeometry(100, 100, 600, 400)
+        self.setWindowIcon(QIcon(os.path.join(basedir, "images/collage.png")))  # 替换成你的应用程序图标文件
+        self.setGeometry(100, 100, 600, 600)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
@@ -92,6 +92,7 @@ class ImageCollage(QMainWindow):
         tab1 = QWidget()
         tab2 = QWidget()
         tab_widget.addTab(tab1, "尺寸")
+        tab_widget.addTab(tab2, "布局")
         tab_widget.addTab(tab2, "布局")
         layout.addWidget(tab_widget)
 
@@ -121,14 +122,32 @@ class ImageCollage(QMainWindow):
         self.layout_radio_1 = QCheckBox("布局一")
         self.layout_radio_2 = QCheckBox("布局二")
         self.layout_radio_3 = QCheckBox("布局三")
+        self.layout_radio_4 = QCheckBox("布局四")
+        self.layout_radio_5 = QCheckBox("布局五")
+        self.layout_radio_6 = QCheckBox("布局六")
+        self.layout_radio_7 = QCheckBox("布局七")
+        self.layout_radio_8 = QCheckBox("布局八")
+        self.layout_radio_9 = QCheckBox("随机")
 
-        pixmap_1 = QPixmap(os.path.join(basedir, "images/layout1.png"))
-        pixmap_2 = QPixmap(os.path.join(basedir, "images/layout2.png"))
-        pixmap_3 = QPixmap(os.path.join(basedir, "images/layout3.png"))
+        pixmap_1 = QPixmap(os.path.join(basedir, "images/layout-1.png"))
+        pixmap_2 = QPixmap(os.path.join(basedir, "images/layout-2.png"))
+        pixmap_3 = QPixmap(os.path.join(basedir, "images/layout-3.png"))
+        pixmap_4 = QPixmap(os.path.join(basedir, "images/layout-4.png"))
+        pixmap_5 = QPixmap(os.path.join(basedir, "images/layout-5.png"))
+        pixmap_6 = QPixmap(os.path.join(basedir, "images/layout-6.png"))
+        pixmap_7 = QPixmap(os.path.join(basedir, "images/layout-7.png"))
+        pixmap_8 = QPixmap(os.path.join(basedir, "images/layout-8.png"))
+        pixmap_9 = QPixmap(os.path.join(basedir, "images/random.png"))
 
-        pixmap_1 = pixmap_1.scaled(100, 100)
-        pixmap_2 = pixmap_2.scaled(100, 100)
-        pixmap_3 = pixmap_3.scaled(100, 100)
+        pixmap_1 = pixmap_1.scaled(50, 50)
+        pixmap_2 = pixmap_2.scaled(50, 50)
+        pixmap_3 = pixmap_3.scaled(50, 50)
+        pixmap_4 = pixmap_4.scaled(50, 50)
+        pixmap_5 = pixmap_5.scaled(50, 50)
+        pixmap_6 = pixmap_6.scaled(50, 50)
+        pixmap_7 = pixmap_7.scaled(50, 50)
+        pixmap_8 = pixmap_8.scaled(50, 50)
+        pixmap_9 = pixmap_9.scaled(50, 50)
 
         label_1 = QLabel()
         label_1.setPixmap(pixmap_1)
@@ -141,29 +160,6 @@ class ImageCollage(QMainWindow):
         label_3 = QLabel()
         label_3.setPixmap(pixmap_3)
         self.layout_radio_3.toggled.connect(lambda: self.show_image(label_3, pixmap_3))
-
-        radio_layout_layout = QHBoxLayout()
-        radio_layout_layout.addWidget(self.layout_radio_1)
-        radio_layout_layout.addWidget(label_1)
-        radio_layout_layout.addWidget(self.layout_radio_2)
-        radio_layout_layout.addWidget(label_2)
-        radio_layout_layout.addWidget(self.layout_radio_3)
-        radio_layout_layout.addWidget(label_3)
-
-        layout_layout.addLayout(radio_layout_layout)
-
-        self.layout_radio_4 = QCheckBox("布局四")
-        self.layout_radio_5 = QCheckBox("布局五")
-        self.layout_radio_6 = QCheckBox("布局六")
-
-        pixmap_4 = QPixmap(os.path.join(basedir, "images/layout4.png"))
-        pixmap_5 = QPixmap(os.path.join(basedir, "images/layout5.png"))
-        pixmap_6 = QPixmap(os.path.join(basedir, "images/layout6.png"))
-
-        pixmap_4 = pixmap_4.scaled(100, 100)
-        pixmap_5 = pixmap_5.scaled(100, 100)
-        pixmap_6 = pixmap_6.scaled(100, 100)
-
         label_4 = QLabel()
         label_4.setPixmap(pixmap_4)
         self.layout_radio_4.toggled.connect(lambda: self.show_image(label_4, pixmap_4))
@@ -175,6 +171,50 @@ class ImageCollage(QMainWindow):
         label_6 = QLabel()
         label_6.setPixmap(pixmap_6)
         self.layout_radio_6.toggled.connect(lambda: self.show_image(label_6, pixmap_6))
+
+        label_7 = QLabel()
+        label_7.setPixmap(pixmap_6)
+        self.layout_radio_7.toggled.connect(lambda: self.show_image(label_7, pixmap_7))
+
+        label_8 = QLabel()
+        label_8.setPixmap(pixmap_8)
+        self.layout_radio_8.toggled.connect(lambda: self.show_image(label_8, pixmap_8))
+
+        label_9 = QLabel()
+        label_9.setPixmap(pixmap_9)
+        self.layout_radio_9.toggled.connect(lambda: self.show_image(label_9, pixmap_9))
+
+
+        radio_layout_layout = QHBoxLayout()
+        radio_layout_layout.addWidget(self.layout_radio_1)
+        radio_layout_layout.addWidget(label_1)
+        radio_layout_layout.addWidget(self.layout_radio_2)
+        radio_layout_layout.addWidget(label_2)
+        radio_layout_layout.addWidget(self.layout_radio_3)
+        radio_layout_layout.addWidget(label_3)
+
+        layout_layout.addLayout(radio_layout_layout)
+
+        radio_layout_layout_2 = QHBoxLayout()
+        radio_layout_layout_2.addWidget(self.layout_radio_4)
+        radio_layout_layout_2.addWidget(label_4)
+        radio_layout_layout_2.addWidget(self.layout_radio_5)
+        radio_layout_layout_2.addWidget(label_5)
+        radio_layout_layout_2.addWidget(self.layout_radio_6)
+        radio_layout_layout_2.addWidget(label_6)
+
+        layout_layout.addLayout(radio_layout_layout_2)
+
+        radio_layout_layout_3 = QHBoxLayout()
+        radio_layout_layout_3.addWidget(self.layout_radio_7)
+        radio_layout_layout_3.addWidget(label_7)
+        radio_layout_layout_3.addWidget(self.layout_radio_8)
+        radio_layout_layout_3.addWidget(label_8)
+        radio_layout_layout_3.addWidget(self.layout_radio_9)
+        radio_layout_layout_3.addWidget(label_9)
+
+        layout_layout.addLayout(radio_layout_layout_3)
+
         # 在 __init__ 方法中为每个单选按钮连接点击事件
         # self.size_radio_3inch.clicked.connect(self.size_radio_clicked)
         # self.size_radio_4inch.clicked.connect(self.size_radio_clicked)
@@ -187,15 +227,10 @@ class ImageCollage(QMainWindow):
         self.layout_radio_4.clicked.connect(self.layout_radio_clicked)
         self.layout_radio_5.clicked.connect(self.layout_radio_clicked)
         self.layout_radio_6.clicked.connect(self.layout_radio_clicked)
-        radio_layout_layout_2 = QHBoxLayout()
-        radio_layout_layout_2.addWidget(self.layout_radio_4)
-        radio_layout_layout_2.addWidget(label_4)
-        radio_layout_layout_2.addWidget(self.layout_radio_5)
-        radio_layout_layout_2.addWidget(label_5)
-        radio_layout_layout_2.addWidget(self.layout_radio_6)
-        radio_layout_layout_2.addWidget(label_6)
+        self.layout_radio_7.clicked.connect(self.layout_radio_clicked)
+        self.layout_radio_8.clicked.connect(self.layout_radio_clicked)
+        self.layout_radio_9.clicked.connect(self.layout_radio_clicked)
 
-        layout_layout.addLayout(radio_layout_layout_2)
 
         self.generate_button = QPushButton("生成")
         self.generate_button.setDisabled(True)
