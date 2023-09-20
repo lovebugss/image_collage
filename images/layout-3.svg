@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">
+    <rect x="0" y="180" width="360" height="180" fill="currentColor" stroke="#fff" fill-opacity="0.1"
+          stroke-opacity="1"></rect>
+    <rect x="0" y="0" width="180" height="180" fill="currentColor" stroke="#fff" fill-opacity="0.2"
+          stroke-opacity="1"></rect>
+    <rect x="180" y="0" width="180" height="180" fill="currentColor" stroke="#fff" fill-opacity="0.3"
+          stroke-opacity="1"></rect>
+</svg>

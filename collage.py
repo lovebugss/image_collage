@@ -17,114 +17,92 @@ class Layout:
         self.coordinates = coordinates
 
     def __str__(self):
-        return f'Layout(name={self.name}, coordinates=[{",".join(self.coordinates)}])'
-
-
-class LayoutNew:
-    def __init__(self, name, top, bottom):
-        self.name = name
-        self.top = top
-        self.bottom = bottom
+        return f'Layout(name={self.name}, coordinates=[{",".join(map(str, self.coordinates))}])'
 
 
 class Collage:
-    def __int__(self, layout, images):
+    def __init__(self, layout, images):
         self.layout = layout
         self.images = images
 
 
-class Coordinate:
-    def __init__(self, width, height, x, y):
-        self.width = width
-        self.height = height
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return f'Coordinate(width={self.width}, height={self.height}, x={self.x}, y={self.y})'
-
-
 def collages(images, layouts, size=(1200, 1800)):
     result = []
-
-    # 按图片面积从大到小排序图片列表
+    print("collage", images, layouts)
+    # 图片排序
     images.sort(key=lambda img: img.width * img.height, reverse=True)
     first = images[0]
-    while len(images) >= len(layouts):
+
+    while len(images) >= 2:
         last = images[-1]
-        print("last", last)
+
         if last is None or first.path == last.path:
             break
-        collage = generate_collage(images, layouts)
-        if collage is not None and len(collage) > 0:
-            print("collage len: ", len(collage))
-            result.append(collage)
 
+        collage = generate_collage(images, layouts)
+
+        if collage and len(collage) > 0:
+            result.extend(collage)
     return result
 
 
 def generate_collage(images, layouts):
     collage = []
-
-    for i in range(len(layouts)):
+    print("generate_collage", images, layouts)
+    for i, layout in enumerate(layouts):
         if not images:
-            break  # 没有足够的图片可用
+            break  # Not enough images available
 
-        layout = layouts[i]
-        print("当前布局: ", layout.name, len(layout.coordinates))
         coordinates = layout.coordinates
         collage_images = []
 
-        for j in range(len(coordinates)):
-            suitable_image = find_suitable_image(images, coordinates[j])
-            if suitable_image is not None:
-                collage_images.append((suitable_image, coordinates[j]))
+        for j, coordinate in enumerate(coordinates):
+            suitable_image = find_suitable_image(images, coordinate)
+            if suitable_image:
+                collage_images.append((suitable_image, coordinate))
             else:
                 break  # 如果找不到合适的图片，跳出循环
 
         if len(collage_images) == len(coordinates):
-            collage.extend(collage_images)
+            collage.append(collage_images)
         else:
-            print("跳出布局循环")
-            # images.extend([i[0] for i in collage_images])
-            break  # 如果无法填充完整布局，跳出循环
-
+            break
     return collage
 
 
 def find_suitable_image(images, coordinate):
-    print("查找合适的布局", coordinate)
+
     for image in images:
-        print("当前图片", image)
         desired_aspect_ratio = coordinate.width / coordinate.height
-        is_horizontal_coordinate = coordinate.width > coordinate.height
-
         image_aspect_ratio = image.width / image.height
-        is_horizontal_image = image.width > image.height
-
-        # if (image.width >= coordinate.width and
-        #         image.height >= coordinate.height and
-        #         (abs(desired_aspect_ratio - image_aspect_ratio) < 0.01 or
-        #          (is_horizontal_coordinate and is_horizontal_image) or
-        #          (not is_horizontal_coordinate and not is_horizontal_image))):
-        # if (image.width >= coordinate.width and image.height >= coordinate.height and
-        if(abs(desired_aspect_ratio - image_aspect_ratio) < 0.01 or (is_horizontal_coordinate and is_horizontal_image)):
-            # 找到合适的图片，满足要求
-            print("查找到合适图片")
-            images.remove(image)  # 从可用图片列表中移除
+        if abs(desired_aspect_ratio - image_aspect_ratio) < 0.01:
+            print("image1", image)
+            images.remove(image)
             return image
-        else:
-            print("未找到合适图片, ", coordinate)
-
-    return None  # 找不到合适的图片
+    for image in images:
+        is_horizontal_coordinate = coordinate.width > coordinate.height
+        is_horizontal_image = image.width > image.height
+        if is_horizontal_coordinate and is_horizontal_image:
+            images.remove(image)
+            print("image2", image)
+            return image
+    if len(images) > 1:
+        image = images[0]
+        images.remove(image)
+        print("image3", image)
+        return image
+    return None
 
 
 if __name__ == '__main__':
-    image_list = []
-    image_list.append(ImageInfo("image/IMG_0048.JPG", 6400, 6400))
-    image_list.append(ImageInfo("image/IMG_0098.JPG", 6400, 4000))
-    image_list.append(ImageInfo("image/IMG_0098.JPG", 6400, 4000))
-    image_list.append(ImageInfo("image/IMG_0098.JPG", 4000, 4000))
-    image_list.append(ImageInfo("image/IMG_0098.JPG", 6400, 4000))
-    layout_list = []
-    generate_collage(image_list, layout_list)
+    image_list = [
+        ImageInfo("image/IMG_0048.JPG", 6400, 6400),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
+        ImageInfo("image/IMG_0098.JPG", 4000, 4000),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
+    ]
+
+    layout_list = []  # Define your layout_list here
+    result = collages(image_list, layout_list)
+    print(result)

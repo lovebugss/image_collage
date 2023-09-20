@@ -1,52 +1,55 @@
 import json
-
-from PIL import Image, ImageDraw, ImageFont
 import os
-from collage import Layout, Coordinate, ImageInfo, collages
+from PIL import Image, ImageDraw, ImageOps
+from collage import Layout, ImageInfo, collages
+
+# Constants for image orientation
+ORIENTATION_NORMAL = 1
+ORIENTATION_ROTATE_180 = 3
+ORIENTATION_ROTATE_270 = 6
+ORIENTATION_ROTATE_90 = 8
 
 
-def rotate_image(img):
-    if hasattr(img, '_getexif'):
-        exif = img._getexif()
+class Coordinate:
+    def __init__(self, width, height, x, y):
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return f'Coordinate(width={self.width}, height={self.height}, x={self.x}, y={self.y})'
+
+
+def correct_image_orientation(image):
+    if hasattr(image, '_getexif'):
+        exif = image._getexif()
         if exif is not None:
             orientation = exif.get(0x0112)
             if orientation is not None:
-                if orientation == 1:
-                    # 正常方向，无需旋转
-                    pass
-                elif orientation == 3:
-                    # 需要旋转180度
-                    img = img.transpose(Image.ROTATE_180)
-                elif orientation == 6:
-                    # 需要顺时针旋转270度
-                    img = img.transpose(Image.ROTATE_270)
-                elif orientation == 8:
-                    # 需要顺时针旋转90度
-                    img = img.transpose(Image.ROTATE_90)
-    return img
+                if orientation == ORIENTATION_ROTATE_180:
+                    return image.transpose(Image.ROTATE_180)
+                elif orientation == ORIENTATION_ROTATE_270:
+                    return image.transpose(Image.ROTATE_270)
+                elif orientation == ORIENTATION_ROTATE_90:
+                    return image.transpose(Image.ROTATE_90)
+    return image
+
+
+def add_border(image, size=16, color=(255, 255, 255)):
+    image_with_border = ImageOps.expand(image, size, color)
+    width, height = image_with_border.size
+    draw = ImageDraw.Draw(image_with_border)
+    line_y = height // 2
+    draw.line([(0, line_y), (width, line_y)], fill=color, width=size)
+    return image_with_border
 
 
 def get_image_size(path):
     with Image.open(path) as img:
-        if hasattr(img, '_getexif'):
-            exif = img._getexif()
-            if exif is not None:
-                orientation = exif.get(0x0112)
-                if orientation is not None:
-                    if orientation == 1:
-                        # 正常方向，无需旋转
-                        pass
-                    elif orientation == 3:
-                        # 需要旋转180度
-                        img = img.transpose(Image.ROTATE_180)
-                    elif orientation == 6:
-                        # 需要顺时针旋转270度
-                        img = img.transpose(Image.ROTATE_270)
-                    elif orientation == 8:
-                        # 需要顺时针旋转90度
-                        img = img.transpose(Image.ROTATE_90)
+        img = correct_image_orientation(img)
         size = img.size
-        print(f"当前图片:  {path}, size: {size}")
+        print(f"Current image: {path}, size: {size}")
         return size
 
 
@@ -118,48 +121,57 @@ def resize_image(image, width, height):
     return image.resize((width, height), Image.LANCZOS)
 
 
-def image_collage(image_folder: str, image_size=(1200, 1800), layout_list=None, callback=None):
+def image_collage(image_folder, image_size=(1200, 1800), layout_list=None, border_size=6, border_color="#fff",
+                  callback=None, output="自动拼接"):
     if layout_list is None:
         layout_list = [1, 2]
+
     print(f'image_folder: {image_folder}, image_size: {image_size}, layout_list: {layout_list}')
-    image_files = [f for f in os.listdir(image_folder) if
-                   f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.cr2'))]
+
+    # Define allowed image file extensions
+    allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.cr2')
+    image_files = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if
+                   f.lower().endswith(allowed_extensions)]
 
     if not image_files:
-        print("未找到任何图片文件.")
+        print("No image files found.")
         return
+
+    if not os.path.exists(output):
+        os.mkdir(output)
 
     layout_list = [layout for layout in layout_list if layout in range(1, 7)]
 
-    image_stack = [os.path.join(image_folder, image_file) for image_file in image_files]
+    images = [ImageInfo(path, *get_image_size(path)) for path in image_files]
 
-    collages = calculate_optimal_layout(image_stack, layout_list, image_size)
+    layouts = [Layout(str(layout), image_layout(image_size, layout)) for layout in layout_list]
+    result = collages(images, layouts)
 
+    print(result)
     collage_count = 1
     idx = 0
-    if os.path.exists("output") is False:
-        os.mkdir("output")
-    for collage in collages:
-        print("拼贴图长度", len(collage))
+
+    for collage in result:
+        print("Collage length:", len(collage))
         collage_image = Image.new('RGB', image_size)
+
         for image_info, coordinate in collage:
-            print("当前图片: ", image_info.path, image_info.width, image_info.height)
-            print("当前坐标: ", coordinate.width, coordinate.height, coordinate.x, coordinate.y)
+            print("Current image:", image_info.path, image_info.width, image_info.height)
+            print("Current coordinates:", coordinate.width, coordinate.height, coordinate.x, coordinate.y)
             image = Image.open(image_info.path)
-            image = rotate_image(image)
-            image = resize_image(image, coordinate.width, coordinate.height)
+            image = correct_image_orientation(image)
+            image = image.resize((coordinate.width, coordinate.height), Image.LANCZOS)
             collage_image.paste(image, (coordinate.x, coordinate.y))
             if callback:
                 callback(image_info.path, idx)
-            idx = idx + 1
+            idx += 1
 
-        collage_image.save(f"output/collage_{collage_count}.jpg")
-        print(f"已生成拼贴图片: collage_{collage_count}.jpg")
+        collage_image = add_border(collage_image, size=border_size, color=border_color)
+        collage_image.save(f"{output}/collage_{collage_count}.jpg")
+        print(f"Generated collage image: collage_{collage_count}.jpg")
         collage_count += 1
 
 
 if __name__ == '__main__':
-    folder_path = './image/'
+    folder_path = 'D:\\workspace\\pythonProject\\image_collage\\image'
     image_collage(folder_path, image_size=(1200, 1800), layout_list=[1, 2])
-    # res = calculate_optimal_layout(10, [1, 2, 5], None)
-    # print(res)

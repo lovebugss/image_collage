@@ -6,7 +6,7 @@ block_cipher = None
 
 a = Analysis(
     ['main.py', 'resize.py','collage.py'],
-    pathex=[("/Users/renjp/Documents/workspace/image_collage")],
+#    pathex=[("/Users/renjp/Documents/workspace/image_collage")],
     binaries=[],
     datas = [('./images/*.png', 'images'), ],
     hiddenimports=[],
@@ -41,5 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['images/icon.png'],
+    icon=['images/collage.png'],
 )

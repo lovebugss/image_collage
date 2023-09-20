@@ -1,6 +1,6 @@
 import sys
 import os
-import time
+from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -12,35 +12,41 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QLabel,
     QRadioButton,
-    QHBoxLayout,
     QFormLayout,
     QProgressBar,
     QStackedWidget,
-    QMessageBox, QCheckBox,
+    QMessageBox,
+    QCheckBox, QHBoxLayout, QSlider, QColorDialog, QFrame,
 )
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QPixmap, QIcon, QPalette
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.uic.properties import QtGui
+
 from resize import image_collage
 
-size_map = {
-    "3": (1200, 1800),
-    "4": (1200, 1800),
-    "5": (1200, 1800),
-    "6": (1200, 1800),
-}
+# 图像尺寸的常量
+SIZE_3_INCH = 3
+SIZE_6_INCH = 6
 if getattr(sys, 'frozen', None):
     basedir = sys._MEIPASS
 else:
     basedir = os.path.dirname(__file__)
+# 配置字典
+config = {
+    SIZE_3_INCH: (1200, 1800),
+    SIZE_6_INCH: (1200, 1800),
+}
 
 
 class GenerateThread(QThread):
     progress_update = pyqtSignal(int)
     finished = pyqtSignal()
 
-    def __init__(self, folder_path, selected_size, selected_layout):
+    def __init__(self, folder_path, selected_size, selected_layout, border_color, border_size):
         super().__init__()
         self.folder_path = folder_path
+        self.border_color = border_color
+        self.border_size = border_size
         self.selected_size = selected_size
         self.selected_layout = list(set(selected_layout))
 
@@ -52,8 +58,10 @@ class GenerateThread(QThread):
             progress = int(index / total_files * 100)
             self.progress_update.emit(progress)
 
-        image_collage(self.folder_path, size_map[str(self.selected_size)], self.selected_layout, callback)
-
+        image_collage(self.folder_path, config[self.selected_size], self.selected_layout, self.border_size,
+                      self.border_color, callback)
+        progress = int(100)
+        self.progress_update.emit(progress)
         self.finished.emit()
 
     def get_image_files(self, folder_path):
@@ -67,55 +75,124 @@ class GenerateThread(QThread):
         return image_files
 
 
+class ColorButton(QPushButton):
+    '''
+    Custom Qt Widget to show a chosen color.
+
+    Left-clicking the button shows the color-chooser, while
+    right-clicking resets the color to None (no-color).
+    '''
+
+    colorChanged = pyqtSignal(object)
+
+    def __init__(self, *args, color=None, callback=None, **kwargs):
+        super(ColorButton, self).__init__(*args, **kwargs)
+
+        self._color = None
+        self._default = color
+        self.callback = callback
+        self.pressed.connect(self.onColorPicker)
+
+        # Set the initial/default state.
+        self.setColor(self._default)
+
+    def setColor(self, color):
+        print("set color", color)
+        if color != self._color:
+            self._color = color
+            self.colorChanged.emit(color)
+        if self._color:
+            self.setStyleSheet("background-color: %s;" % self._color)
+        else:
+            self.setStyleSheet("")
+
+    def color(self):
+        return self._color
+
+    def onColorPicker(self):
+
+        dlg = QColorDialog(self)
+        col = dlg.getColor()
+        if col.isValid():
+            self.setColor(col.name())
+
+    def mousePressEvent(self, e):
+        print("mouse...", e)
+        if e.button() == Qt.MouseButton.RightButton:
+            self.setColor(self._default)
+
+        return super(ColorButton, self).mousePressEvent(e)
+
+
 class ImageCollage(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("图片生成工具")
         self.setWindowIcon(QIcon(os.path.join(basedir, "images/collage.png")))  # 替换成你的应用程序图标文件
-        self.setGeometry(100, 100, 600, 600)
+        self.setGeometry(100, 100, 600, 400)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
-        layout = QVBoxLayout()
+        vbox = QVBoxLayout()
 
         self.folder_line_edit = QLineEdit(self)
         self.folder_line_edit.setDisabled(True)
-        layout.addWidget(self.folder_line_edit)
+        vbox.addWidget(self.folder_line_edit)
 
         select_folder_button = QPushButton("选择文件夹")
         select_folder_button.clicked.connect(self.select_folder)
-        layout.addWidget(select_folder_button)
+        vbox.addWidget(select_folder_button)
 
         tab_widget = QTabWidget()
         tab1 = QWidget()
         tab2 = QWidget()
+        tab3 = QWidget()
+        tab_widget.addTab(tab2, "布局")
+        tab_widget.addTab(tab3, "边框")
         tab_widget.addTab(tab1, "尺寸")
-        tab_widget.addTab(tab2, "布局")
-        tab_widget.addTab(tab2, "布局")
-        layout.addWidget(tab_widget)
+        border_layout = QVBoxLayout(tab3)
+        border_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        vbox.addWidget(tab_widget)
+        border_label = QLabel("请选择边框尺寸:")
+        border_layout.addWidget(border_label)
+        slider = QSlider(Qt.Orientation.Horizontal)
+        slider.setMinimum(0)  # 最小缩放比例为10%
+        slider.setMaximum(24)  # 最大缩放比例为200%
+        slider.setSingleStep(1)  # 缩放步长为10%
+        slider.setValue(6)  # 初始缩放比例为100%
+        slider.valueChanged.connect(self.update_border_size)
+        border_layout.addWidget(slider)
+
+        color_label = QLabel("选择颜色:")
+        border_layout.addWidget(color_label)
+
+        # self.color_display_label = QPushButton()
+        # self.color_display_label.setFixedSize(20, 20)  # 设置颜色显示框的大小
+        # border_layout.addWidget(self.color_display_label)
+
+        self.color_button = ColorButton(color="#fff")
+        self.color_button.setFixedSize(20, 20)
+        # # color_button.show()
+        self.color_button.colorChanged.connect(self.selectColor)
+        border_layout.addWidget(self.color_button)
 
         size_layout = QVBoxLayout(tab1)
-
+        size_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         label = QLabel("请选择相纸尺寸:")
         size_layout.addWidget(label)
 
-        # self.size_radio_3inch = QRadioButton("3寸")
-        # self.size_radio_4inch = QRadioButton("4寸")
-        # self.size_radio_5inch = QRadioButton("5寸")
         self.size_radio_6inch = QRadioButton("6寸")
-
+        self.size_radio_6inch.setChecked(True)
         radio_layout = QFormLayout()
-        # radio_layout.addRow(self.size_radio_3inch)
-        # radio_layout.addRow(self.size_radio_4inch)
-        # radio_layout.addRow(self.size_radio_5inch)
         radio_layout.addRow(self.size_radio_6inch)
 
         size_layout.addLayout(radio_layout)
 
         layout_layout = QVBoxLayout(tab2)
-
+        layout_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout_label = QLabel("请选择布局:")
         layout_layout.addWidget(layout_label)
 
@@ -127,30 +204,31 @@ class ImageCollage(QMainWindow):
         self.layout_radio_6 = QCheckBox("布局六")
         self.layout_radio_7 = QCheckBox("布局七")
         self.layout_radio_8 = QCheckBox("布局八")
-        self.layout_radio_9 = QCheckBox("随机")
+        self.layout_radio_9 = QCheckBox("布局九")
 
-        pixmap_1 = QPixmap(os.path.join(basedir, "images/layout-1.png"))
-        pixmap_2 = QPixmap(os.path.join(basedir, "images/layout-2.png"))
-        pixmap_3 = QPixmap(os.path.join(basedir, "images/layout-3.png"))
-        pixmap_4 = QPixmap(os.path.join(basedir, "images/layout-4.png"))
-        pixmap_5 = QPixmap(os.path.join(basedir, "images/layout-5.png"))
-        pixmap_6 = QPixmap(os.path.join(basedir, "images/layout-6.png"))
-        pixmap_7 = QPixmap(os.path.join(basedir, "images/layout-7.png"))
-        pixmap_8 = QPixmap(os.path.join(basedir, "images/layout-8.png"))
-        pixmap_9 = QPixmap(os.path.join(basedir, "images/random.png"))
+        pixmap_1 = QPixmap(os.path.join(basedir, "images/layout-1.svg"))
+        pixmap_2 = QPixmap(os.path.join(basedir, "images/layout-2.svg"))
+        pixmap_3 = QPixmap(os.path.join(basedir, "images/layout-3.svg"))
+        pixmap_4 = QPixmap(os.path.join(basedir, "images/layout-4.svg"))
+        pixmap_5 = QPixmap(os.path.join(basedir, "images/layout-5.svg"))
+        pixmap_6 = QPixmap(os.path.join(basedir, "images/layout-6.svg"))
+        pixmap_7 = QPixmap(os.path.join(basedir, "images/layout-7.svg"))
+        pixmap_8 = QPixmap(os.path.join(basedir, "images/layout-8.svg"))
+        pixmap_9 = QPixmap(os.path.join(basedir, "images/layout-9.svg"))
 
-        pixmap_1 = pixmap_1.scaled(50, 50)
-        pixmap_2 = pixmap_2.scaled(50, 50)
-        pixmap_3 = pixmap_3.scaled(50, 50)
-        pixmap_4 = pixmap_4.scaled(50, 50)
-        pixmap_5 = pixmap_5.scaled(50, 50)
-        pixmap_6 = pixmap_6.scaled(50, 50)
-        pixmap_7 = pixmap_7.scaled(50, 50)
-        pixmap_8 = pixmap_8.scaled(50, 50)
-        pixmap_9 = pixmap_9.scaled(50, 50)
+        pixmap_1 = pixmap_1.scaled(64, 64)
+        pixmap_2 = pixmap_2.scaled(64, 64)
+        pixmap_3 = pixmap_3.scaled(64, 64)
+        pixmap_4 = pixmap_4.scaled(64, 64)
+        pixmap_5 = pixmap_5.scaled(64, 64)
+        pixmap_6 = pixmap_6.scaled(64, 64)
+        pixmap_7 = pixmap_7.scaled(64, 64)
+        pixmap_8 = pixmap_8.scaled(64, 64)
+        pixmap_9 = pixmap_9.scaled(64, 64)
 
         label_1 = QLabel()
         label_1.setPixmap(pixmap_1)
+        self.layout_radio_1.setChecked(True)
         self.layout_radio_1.toggled.connect(lambda: self.show_image(label_1, pixmap_1))
 
         label_2 = QLabel()
@@ -184,7 +262,6 @@ class ImageCollage(QMainWindow):
         label_9.setPixmap(pixmap_9)
         self.layout_radio_9.toggled.connect(lambda: self.show_image(label_9, pixmap_9))
 
-
         radio_layout_layout = QHBoxLayout()
         radio_layout_layout.addWidget(self.layout_radio_1)
         radio_layout_layout.addWidget(label_1)
@@ -215,10 +292,6 @@ class ImageCollage(QMainWindow):
 
         layout_layout.addLayout(radio_layout_layout_3)
 
-        # 在 __init__ 方法中为每个单选按钮连接点击事件
-        # self.size_radio_3inch.clicked.connect(self.size_radio_clicked)
-        # self.size_radio_4inch.clicked.connect(self.size_radio_clicked)
-        # self.size_radio_5inch.clicked.connect(self.size_radio_clicked)
         self.size_radio_6inch.clicked.connect(self.size_radio_clicked)
 
         self.layout_radio_1.clicked.connect(self.layout_radio_clicked)
@@ -231,64 +304,20 @@ class ImageCollage(QMainWindow):
         self.layout_radio_8.clicked.connect(self.layout_radio_clicked)
         self.layout_radio_9.clicked.connect(self.layout_radio_clicked)
 
-
         self.generate_button = QPushButton("生成")
         self.generate_button.setDisabled(True)
         self.generate_button.clicked.connect(self.start_generation)
-        layout.addWidget(self.generate_button)
+        vbox.addWidget(self.generate_button)
 
-        central_widget.setLayout(layout)
+        central_widget.setLayout(vbox)
 
         self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f0f0f0;
-            }
-            QWidget {
-                background-color: #f0f0f0;
-            }
-            QPushButton {
-                background-color: #007BFF;
-                color: white;
-                border: 1px solid #007BFF;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-                border: 1px solid #0056b3;
-            }
-            QPushButton:disabled {
-                background-color: #ccc;
-                border: 1px solid #ccc;
-            }
-            QLineEdit {
-                border: 1px solid #ccc;
-                padding: 5px;
-            }
-            QTabWidget::pane {
-                border: 1px solid #ccc;
-                background-color: white;
-            }
-            QTabWidget::tab-bar {
-                alignment: center;
-            }
-            QTabBar::tab {
-                background-color: #007BFF;
-                color: white;
-                min-width: 100px;
-                padding: 5px 10px;
-            }
-            QTabBar::tab:selected {
-                background-color: #0056b3;
-            }
-            QRadioButton {
-                padding: 5px;
-            }
             QProgressBar {
                 text-align: center;
                 height: 64px;
             }
             QProgressBar::chunk {
-                background-color: #007BFF;
+                # background-color: #007BFF;
                 width: 5px;
             }
         """)
@@ -314,8 +343,16 @@ class ImageCollage(QMainWindow):
         self.folder_selected = False
         self.size_selected = False
         self.layout_selected = False
-        self.selected_size = 0
+        self.border_size = 5
+        self.border_color = '#fff'
+        self.selected_size = SIZE_6_INCH
         self.selected_layout = set()
+
+    def selectColor(self, color):
+        self.border_color = color
+
+    def update_border_size(self, border_size):
+        self.border_size = border_size
 
     def select_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "选择文件夹")
@@ -330,20 +367,11 @@ class ImageCollage(QMainWindow):
         self.update_generate_button_state()
 
     def show_image(self, label, pixmap):
-        label.setPixmap(pixmap)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.show()
+        pass
 
     def size_radio_clicked(self):
-        # if self.size_radio_3inch.isChecked():
-        #     self.selected_size = 3
-        # elif self.size_radio_4inch.isChecked():
-        #     self.selected_size = 4
-        # elif self.size_radio_5inch.isChecked():
-        #     self.selected_size = 5
-        # elif self.size_radio_6inch.isChecked():
         if self.size_radio_6inch.isChecked():
-            self.selected_size = 6
+            self.selected_size = SIZE_6_INCH
         self.update_generate_button_state()
 
     def layout_radio_clicked(self):
@@ -372,6 +400,8 @@ class ImageCollage(QMainWindow):
         folder_path = self.folder_line_edit.text()
         selected_size = self.selected_size  # 使用成员变量存储选中的尺寸
         selected_layout = self.selected_layout  # 使用成员变量存储选中的布局
+        border_color = self.border_color  # 使用成员变量存储选中的布局
+        border_size = self.border_size  # 使用成员变量存储选中的布局
 
         self.mask_widget.setVisible(True)
         self.generate_button.setDisabled(True)
@@ -382,9 +412,11 @@ class ImageCollage(QMainWindow):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setFormat("%p%")
+        self.progress_bar.setGeometry(0, 0, self.width(), self.height())
         self.layout().addWidget(self.progress_bar)
 
-        self.worker_thread = GenerateThread(folder_path, selected_size, list(selected_layout))
+        self.worker_thread = GenerateThread(folder_path, selected_size, list(selected_layout), border_color,
+                                            border_size)
         self.worker_thread.finished.connect(self.end_generation)
         self.worker_thread.progress_update.connect(self.update_progress)
         self.worker_thread.start()
@@ -403,26 +435,16 @@ class ImageCollage(QMainWindow):
         QMessageBox.information(self, "通知", "生成任务已完成！")
 
     def size_radio_selected(self):
-        # return any(
-        #     [self.size_radio_3inch.isChecked(), self.size_radio_4inch.isChecked(), self.size_radio_5inch.isChecked(),
-        #      self.size_radio_6inch.isChecked()])
-        return any(
-            [self.size_radio_6inch.isChecked()])
+        return any([self.size_radio_6inch.isChecked()])
 
     def layout_radio_selected(self):
         return any([self.layout_radio_1.isChecked(), self.layout_radio_2.isChecked(), self.layout_radio_3.isChecked(),
                     self.layout_radio_4.isChecked(), self.layout_radio_5.isChecked(), self.layout_radio_6.isChecked()])
 
     def disable_size_radio_buttons(self):
-        # self.size_radio_3inch.setDisabled(True)
-        # self.size_radio_4inch.setDisabled(True)
-        # self.size_radio_5inch.setDisabled(True)
         self.size_radio_6inch.setDisabled(True)
 
     def enable_size_radio_buttons(self):
-        # self.size_radio_3inch.setDisabled(False)
-        # self.size_radio_4inch.setDisabled(False)
-        # self.size_radio_5inch.setDisabled(False)
         self.size_radio_6inch.setDisabled(False)
 
     def disable_layout_radio_buttons(self):
