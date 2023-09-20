@@ -55,27 +55,71 @@ def get_image_size(path):
 
 def image_layout(size, layout):
     def layout1(width, height):
-        return [Coordinate(width, height // 2, 0, 0), Coordinate(width, height // 2, 0, height // 2)]
+        return [
+            Coordinate(width, height // 2, 0, 0),
+            Coordinate(width, height // 2, 0, height // 2)]
 
     def layout2(width, height):
-        return [Coordinate(width, height // 2, 0, 0), Coordinate(width // 2, height // 2, 0, height // 2),
-                Coordinate(width // 2, height // 2, width // 2, height // 2)]
+        return [
+            Coordinate(width, height // 2, 0, 0),
+            Coordinate(width // 2, height // 2, 0, height // 2),
+            Coordinate(width // 2, height // 2, width // 2, height // 2)]
 
     def layout3(width, height):
-        return [Coordinate(width // 2, height // 2, 0, 0), Coordinate(width // 2, height // 2, 0, height // 2),
-                Coordinate(width // 2, height // 2, width // 2, 0),
-                Coordinate(width // 2, height // 2, width // 2, height // 2)]
+        return [
+            Coordinate(width, height // 2, 0, height // 2),
+            Coordinate(width // 2, height // 2, 0, 0),
+            Coordinate(width // 2, height // 2, width // 2, 0)]
 
     def layout4(width, height):
-        return [Coordinate(width // 2, height // 2, 0, 0), Coordinate(width // 2, height // 2, 0, height // 2),
-                Coordinate(width // 2, height // 2, width // 2, 0),
-                Coordinate(width // 2, height // 2, width // 2, height // 2)]
+        return [
+            Coordinate(width // 2, height // 2, 0, 0),
+            Coordinate(width // 2, height // 2, 0, height // 2),
+            Coordinate(width // 2, height // 2, 0, height // 2),
+            Coordinate(width // 2, height // 2, width // 2, height // 2)]
 
     def layout5(width, height):
-        return []  # Add your custom layout logic here
+        return [
+            Coordinate((width // 3), height // 2, 0, 0),
+            Coordinate((width // 3 * 2), height // 2, (width // 3), 0),
+            Coordinate((width // 3 * 2), height // 2, 0, height // 2),
+            Coordinate((width // 3), height // 2, (width // 3 * 2), height // 2)]
 
     def layout6(width, height):
-        return []  # Add your custom layout logic here
+        return [
+            Coordinate((width // 3 * 2), height // 2, 0, 0),
+            Coordinate(width // 3, height // 2, (width // 3 * 2), 0),
+            Coordinate(width // 3, height // 2, 0, height // 2),
+            Coordinate((width // 3 * 2), height // 2, (width // 3), height // 2)]
+
+    def layout7(width, height):
+        return [
+            Coordinate(width // 3, height // 2, 0, 0),
+            Coordinate(width // 3, height // 2, width // 3, 0),
+            Coordinate(width // 3, height // 2, width // 3 * 2, 0),
+            Coordinate(width, height // 2, 0, height // 2)]
+
+    def layout8(width, height):
+        return [
+            Coordinate(width, height // 2, 0, 0),
+            Coordinate(width // 3, height // 2, 0, height // 2),
+            Coordinate(width // 3, height // 2, width // 3, height // 2),
+            Coordinate(width // 3, height // 2, width // 3 * 2, height // 2),
+        ]
+
+    def layout9(width, height):
+        return [
+            Coordinate(width // 2, height // 2, 0, 0),
+            Coordinate(width // 2, height // 4, width // 2, 0),
+            Coordinate(width // 2, height // 4, width // 2, height // 4),
+            Coordinate(width, height // 2, 0, height // 2)]
+
+    def layout10(width, height):
+        return [
+            Coordinate(width, height // 4, 0, 0),
+            Coordinate(width, height // 4, 0, height // 4),
+            Coordinate(width, height // 4, 0, height // 2),
+            Coordinate(width, height // 4, 0, height // 4 * 3)]
 
     layout_map = {
         "1": layout1(size[0], size[1]),
@@ -84,6 +128,10 @@ def image_layout(size, layout):
         "4": layout4(size[0], size[1]),
         "5": layout5(size[0], size[1]),
         "6": layout6(size[0], size[1]),
+        "7": layout7(size[0], size[1]),
+        "8": layout8(size[0], size[1]),
+        "9": layout9(size[0], size[1]),
+        "10": layout10(size[0], size[1]),
     }
     return layout_map.get(str(layout), [])
 
