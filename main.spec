@@ -8,7 +8,7 @@ a = Analysis(
     ['main.py', 'resize.py','collage.py'],
 #    pathex=[("/Users/renjp/Documents/workspace/image_collage")],
     binaries=[],
-    datas = [('./images/*.png', 'images'), ],
+    datas = [('./images/*', 'images'), ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
