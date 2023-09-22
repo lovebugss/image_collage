@@ -165,8 +165,19 @@ def calculate_optimal_layout(image_files, layout_list, image_size):
     return result
 
 
-def resize_image(image, width, height):
-    return image.resize((width, height), Image.LANCZOS)
+def resize_image(image, coordinate, image_info):
+    c_w = coordinate.width
+    c_h = coordinate.height
+
+    i_w = image_info.width
+    i_h = image_info.height
+    # 先计算出等比例图片缩放尺寸
+    # 根据最长的边, 以此边为基准, 进行缩放
+    w = 0
+    print(c_w, int(c_w / i_w * i_h))
+    # 然后对图片进行裁剪
+
+    return image.resize((c_w, int(i_w / c_w * c_h)), Image.LANCZOS)
 
 
 def image_collage(image_folder, image_size=(1200, 1800), layout_list=None, border_size=6, border_color="#fff",
@@ -207,13 +218,16 @@ def image_collage(image_folder, image_size=(1200, 1800), layout_list=None, borde
             print("Current image:", image_info.path, image_info.width, image_info.height)
             print("Current coordinates:", coordinate.width, coordinate.height, coordinate.x, coordinate.y)
             image = Image.open(image_info.path)
+            # 选择图片
             image = correct_image_orientation(image)
-            image = image.resize((coordinate.width, coordinate.height), Image.LANCZOS)
+            # 调整大小
+            image = resize_image(image, coordinate, image_info)
             collage_image.paste(image, (coordinate.x, coordinate.y))
             if callback:
                 callback(image_info.path, idx)
             idx += 1
 
+        # 添加边框
         collage_image = add_border(collage_image, size=border_size, color=border_color)
         collage_image.save(f"{output}/collage_{collage_count}.jpg")
         print(f"Generated collage image: collage_{collage_count}.jpg")

@@ -31,16 +31,9 @@ def collages(images, layouts, size=(1200, 1800)):
     print("collage", images, layouts)
     # 图片排序
     images.sort(key=lambda img: img.width * img.height, reverse=True)
-    first = images[0]
 
     while len(images) >= 2:
-        last = images[-1]
-
-        if last is None or first.path == last.path:
-            break
-
         collage = generate_collage(images, layouts)
-
         if collage and len(collage) > 0:
             result.extend(collage)
     return result
@@ -51,8 +44,7 @@ def generate_collage(images, layouts):
     print("generate_collage", images, layouts)
     for i, layout in enumerate(layouts):
         if not images:
-            break  # Not enough images available
-
+            break
         coordinates = layout.coordinates
         collage_images = []
 
@@ -60,13 +52,7 @@ def generate_collage(images, layouts):
             suitable_image = find_suitable_image(images, coordinate)
             if suitable_image:
                 collage_images.append((suitable_image, coordinate))
-            else:
-                break  # 如果找不到合适的图片，跳出循环
-
-        if len(collage_images) == len(coordinates):
-            collage.append(collage_images)
-        else:
-            break
+        collage.append(collage_images)
     return collage
 
 
@@ -96,6 +82,11 @@ def find_suitable_image(images, coordinate):
 
 if __name__ == '__main__':
     image_list = [
+        ImageInfo("image/IMG_0048.JPG", 6400, 6400),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
+        ImageInfo("image/IMG_0098.JPG", 4000, 4000),
+        ImageInfo("image/IMG_0098.JPG", 6400, 4000),
         ImageInfo("image/IMG_0048.JPG", 6400, 6400),
         ImageInfo("image/IMG_0098.JPG", 6400, 4000),
         ImageInfo("image/IMG_0098.JPG", 6400, 4000),

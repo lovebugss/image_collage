@@ -361,7 +361,7 @@ class ImageCollage(QMainWindow):
         self.border_size = 5
         self.border_color = '#fff'
         self.selected_size = SIZE_6_INCH
-        self.selected_layout = set()
+        self.selected_layout = {1}
 
     def selectColor(self, color):
         self.border_color = color
