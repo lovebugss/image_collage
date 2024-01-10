@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['main.py', 'resize.py','collage.py'],
+    ['main.py', 'resize.py'],
 #    pathex=[("/Users/renjp/Documents/workspace/image_collage")],
     binaries=[],
     datas = [('./images/*', 'images'), ],

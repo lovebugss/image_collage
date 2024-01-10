@@ -130,8 +130,8 @@ class ImageCollage(QMainWindow):
 
         self.setWindowTitle("图片生成工具")
         self.setWindowIcon(QIcon(os.path.join(basedir, "images/collage.png")))  # 替换成你的应用程序图标文件
-        # self.setGeometry(100, 100, 400, 400)
-
+        self.setWindowFlag(Qt.WindowType.WindowMinMaxButtonsHint, False)
+        self.setFixedSize(440, 480)
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
