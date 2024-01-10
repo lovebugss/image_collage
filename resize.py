@@ -1,13 +1,32 @@
-import json
+import math
 import os
 from PIL import Image, ImageDraw, ImageOps
-from collage import Layout, ImageInfo, collages
+from datetime import datetime
 
-# Constants for image orientation
-ORIENTATION_NORMAL = 1
-ORIENTATION_ROTATE_180 = 3
-ORIENTATION_ROTATE_270 = 6
-ORIENTATION_ROTATE_90 = 8
+
+class ImageInfo:
+    path = ''
+    width = 0
+    height = 0
+
+    def __init__(self, path, width, height):
+        self.path = path
+        self.width = width
+        self.height = height
+
+    def __str__(self):
+        return f'Image(path={self.path}, width={self.width}, height={self.height})'
+
+
+class Layout:
+
+    def __init__(self, name, coordinates):
+        self.name = name
+        self.coordinates = coordinates
+        self.count = len(coordinates)
+
+    def __str__(self):
+        return f'Layout(name={self.name}, count={self.count}, coordinates=[{", ".join(map(str, self.coordinates))}])'
 
 
 class Coordinate:
@@ -21,36 +40,10 @@ class Coordinate:
         return f'Coordinate(width={self.width}, height={self.height}, x={self.x}, y={self.y})'
 
 
-def correct_image_orientation(image):
-    if hasattr(image, '_getexif'):
-        exif = image._getexif()
-        if exif is not None:
-            orientation = exif.get(0x0112)
-            if orientation is not None:
-                if orientation == ORIENTATION_ROTATE_180:
-                    return image.transpose(Image.ROTATE_180)
-                elif orientation == ORIENTATION_ROTATE_270:
-                    return image.transpose(Image.ROTATE_270)
-                elif orientation == ORIENTATION_ROTATE_90:
-                    return image.transpose(Image.ROTATE_90)
-    return image
-
-
-def add_border(image, size=16, color=(255, 255, 255)):
-    image_with_border = ImageOps.expand(image, size, color)
-    width, height = image_with_border.size
-    draw = ImageDraw.Draw(image_with_border)
-    line_y = height // 2
-    draw.line([(0, line_y), (width, line_y)], fill=color, width=size)
-    return image_with_border
-
-
-def get_image_size(path):
-    with Image.open(path) as img:
-        img = correct_image_orientation(img)
-        size = img.size
-        print(f"Current image: {path}, size: {size}")
-        return size
+class Collage:
+    def __init__(self, layout, images):
+        self.layout = layout
+        self.images = images
 
 
 def image_layout(size, layout):
@@ -75,7 +68,7 @@ def image_layout(size, layout):
         return [
             Coordinate(width // 2, height // 2, 0, 0),
             Coordinate(width // 2, height // 2, 0, height // 2),
-            Coordinate(width // 2, height // 2, 0, height // 2),
+            Coordinate(width // 2, height // 2, width // 2, 0),
             Coordinate(width // 2, height // 2, width // 2, height // 2)]
 
     def layout5(width, height):
@@ -136,87 +129,168 @@ def image_layout(size, layout):
     return layout_map.get(str(layout), [])
 
 
-def to_image_info(path):
-    size = get_image_size(path)
-    return ImageInfo(path, size[0], size[1])
+def find_layout(image_count, layouts):
+    # 初始化一个数组 dp，用于记录每个金额对应的最小找零硬币数量
+    dp = [float('inf')] * (image_count + 1)
+    dp[0] = 0  # 0元的最小找零硬币数量为0
+
+    # 遍历每个硬币面额
+    for layout in layouts:
+        # 从硬币面额开始遍历到目标金额
+        for i in range(layout.count, image_count + 1):
+            # 更新 dp[i]，表示金额 i 的最小找零硬币数量
+            if dp[i - layout.count] != float('inf'):
+                dp[i] = min(dp[i], dp[i - layout.count] + 1)
+
+        # 重构找零组合
+    change = []
+    # 剩余图片
+    current_amount = image_count
+    while current_amount > 0:
+        found_coin = False
+        for layout in layouts:
+            # 找到当前硬币面额，使得 dp[current_amount] = dp[current_amount - coin] + 1
+            if current_amount >= layout.count and dp[current_amount] == dp[current_amount - layout.count] + 1:
+                change.append(layout)
+                current_amount -= layout.count
+                found_coin = True
+                break
+        if not found_coin:
+            print("无法找到合适的组合")
+            break
+
+    return change
 
 
-def to_layout():
-    pass
-
-
-def calculate_optimal_layout(image_files, layout_list, image_size):
+def make_change_dp(layouts, image_count):
     '''
 
-    :param image_files:
-    :param layout_list:
-    :param image_size:
-    :return: [[(width, height, x, y),(width, height, x, y)],[(width, height, x, y),(width, height, x, y)]]
+    :param layouts:
+    :param image_count:
+    :return:
     '''
-    images = list(map(to_image_info, image_files))
-    layouts = []
-    for i in layout_list:
-        c = image_layout(image_size, i)
-        print("当前布局: ", i, len(c))
+    # 初始化一个数组 dp，用于记录每个金额对应的最小找零硬币数量
+    dp = [float('inf')] * (image_count + 1)
+    dp[0] = 0  # 0元的最小找零硬币数量为0
 
-        layouts.append(Layout(i, c))
-    result = collages(images, layouts)
-    print(result)
-    return result
+    # 遍历每个硬币面额
+    for layout_item_count in layouts:
+        # 从硬币面额开始遍历到目标金额
+        for i in range(layout_item_count, image_count + 1):
+            # 更新 dp[i]，表示金额 i 的最小找零硬币数量
+            dp[i] = min(dp[i], dp[i - layout_item_count] + 1)
+
+        print(dp)
+    # 重构找零组合
+    change = []
+    # 剩余图片
+    current_amount = image_count
+    while current_amount > 0:
+        for layout_item_count in layouts:
+            # 找到当前硬币面额，使得 dp[current_amount] = dp[current_amount - coin] + 1
+            if current_amount >= layout_item_count and dp[current_amount] == dp[current_amount - layout_item_count] + 1:
+                change.append(layout_item_count)
+                current_amount -= layout_item_count
+                break
+
+    return change
 
 
-def resize_image(image, coordinate, image_info):
-    c_w = coordinate.width
-    c_h = coordinate.height
+ORIENTATION_NORMAL = 1
+ORIENTATION_ROTATE_180 = 3
+ORIENTATION_ROTATE_270 = 6
+ORIENTATION_ROTATE_90 = 8
 
-    i_w = image_info.width
-    i_h = image_info.height
-    # 先计算出等比例图片缩放尺寸
-    # 根据最长的边, 以此边为基准, 进行缩放
-    w = 0
-    print(c_w, int(c_w / i_w * i_h))
-    # 然后对图片进行裁剪
 
-    return image.resize((c_w, int(i_w / c_w * c_h)), Image.LANCZOS)
+def correct_image_orientation(image):
+    if hasattr(image, '_getexif'):
+        exif = image._getexif()
+        if exif is not None:
+            orientation = exif.get(0x0112)
+            if orientation is not None:
+                if orientation == ORIENTATION_ROTATE_180:
+                    return image.transpose(Image.ROTATE_180)
+                elif orientation == ORIENTATION_ROTATE_270:
+                    return image.transpose(Image.ROTATE_270)
+                elif orientation == ORIENTATION_ROTATE_90:
+                    return image.transpose(Image.ROTATE_90)
+    return image
+
+
+def add_border(image, size=16, color=(255, 255, 255)):
+    image_with_border = ImageOps.expand(image, size, color)
+    width, height = image_with_border.size
+    draw = ImageDraw.Draw(image_with_border)
+    line_y = height // 2
+    draw.line([(0, line_y), (width, line_y)], fill=color, width=size)
+    return image_with_border
+
+
+def get_image_size(path):
+    with Image.open(path) as img:
+        img = correct_image_orientation(img)
+        return img.size
+
+
+def resize_image(original_image, coordinate, image_info):
+    # 1. 等比例缩放
+    # 计算缩放比例
+    original_width, original_height = original_image.size
+    width = coordinate.width
+    height = coordinate.height
+    # 原图尺寸
+    img_size = original_image.size
+
+    # 计算新图片尺寸
+    if (original_width - width) > (original_height - height):
+        new_size = int(height / original_height * original_width)
+        # 等比缩放后的尺寸
+        resize_arr = (new_size, height)
+        x = math.ceil((new_size - width) / 2)
+        # 裁剪的数据
+        crop_arr = (x, 0, x + width, height)
+    else:
+        new_size = int(width / original_width * original_height)
+        # 等比缩放后的尺寸
+        resize_arr = (width, new_size)
+        y = math.ceil((new_size - height) / 2)
+        # 裁剪的数据
+        crop_arr = (0, y, width, y + height)
+
+    # 缩放图像
+    resized_image = original_image.resize(resize_arr)
+
+    return resized_image.crop(crop_arr)
 
 
 def image_collage(image_folder, image_size=(1200, 1800), layout_list=None, border_size=6, border_color="#fff",
                   callback=None, output="自动拼接"):
     if layout_list is None:
-        layout_list = [1, 2]
-
-    print(f'image_folder: {image_folder}, image_size: {image_size}, layout_list: {layout_list}')
-
-    # Define allowed image file extensions
+        layout_list = [1]
     allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.cr2')
     image_files = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if
                    f.lower().endswith(allowed_extensions)]
-
-    if not image_files:
-        print("No image files found.")
-        return
-
+    images = [ImageInfo(path, *get_image_size(path)) for path in image_files]
     if not os.path.exists(output):
         os.mkdir(output)
 
-    layout_list = [layout for layout in layout_list if layout in range(1, 7)]
+    image_count = len(images)
+    print(f'当前图片数量: {image_count}, 布局: {layout_list}')
+    layout_list = [Layout('布局-' + str(i), image_layout(image_size, i)) for i in layout_list]
 
-    images = [ImageInfo(path, *get_image_size(path)) for path in image_files]
-
-    layouts = [Layout(str(layout), image_layout(image_size, layout)) for layout in layout_list]
-    result = collages(images, layouts)
-
-    print(result)
-    collage_count = 1
+    # 查找最优布局组合
+    layout_change = find_layout(image_count, layout_list)
+    print(layout_change)
     idx = 0
-
-    for collage in result:
-        print("Collage length:", len(collage))
+    collage_count = 1
+    now = datetime.now().strftime("%Y%m%d%H%M%S")
+    # 读取所有照片
+    for layout in layout_change:
+        print(layout)
         collage_image = Image.new('RGB', image_size)
-
-        for image_info, coordinate in collage:
-            print("Current image:", image_info.path, image_info.width, image_info.height)
-            print("Current coordinates:", coordinate.width, coordinate.height, coordinate.x, coordinate.y)
+        for coordinate in layout.coordinates:
+            print(coordinate)
+            image_info = images.pop()
             image = Image.open(image_info.path)
             # 选择图片
             image = correct_image_orientation(image)
@@ -226,10 +300,9 @@ def image_collage(image_folder, image_size=(1200, 1800), layout_list=None, borde
             if callback:
                 callback(image_info.path, idx)
             idx += 1
-
         # 添加边框
         collage_image = add_border(collage_image, size=border_size, color=border_color)
-        collage_image.save(f"{output}/collage_{collage_count}.jpg")
+        collage_image.save(f"{output}/{now}-collage-{collage_count}.jpg")
         print(f"Generated collage image: collage_{collage_count}.jpg")
         collage_count += 1
 

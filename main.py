@@ -390,6 +390,7 @@ class ImageCollage(QMainWindow):
         self.update_generate_button_state()
 
     def layout_radio_clicked(self):
+        self.selected_layout.clear()
         if self.layout_radio_1.isChecked():
             self.selected_layout.add(1)
         if self.layout_radio_2.isChecked():
@@ -402,6 +403,14 @@ class ImageCollage(QMainWindow):
             self.selected_layout.add(5)
         if self.layout_radio_6.isChecked():
             self.selected_layout.add(6)
+        if self.layout_radio_7.isChecked():
+            self.selected_layout.add(7)
+        if self.layout_radio_8.isChecked():
+            self.selected_layout.add(8)
+        if self.layout_radio_9.isChecked():
+            self.selected_layout.add(9)
+        if self.layout_radio_10.isChecked():
+            self.selected_layout.add(10)
 
         self.update_generate_button_state()
 
@@ -454,7 +463,9 @@ class ImageCollage(QMainWindow):
 
     def layout_radio_selected(self):
         return any([self.layout_radio_1.isChecked(), self.layout_radio_2.isChecked(), self.layout_radio_3.isChecked(),
-                    self.layout_radio_4.isChecked(), self.layout_radio_5.isChecked(), self.layout_radio_6.isChecked()])
+                    self.layout_radio_4.isChecked(), self.layout_radio_5.isChecked(), self.layout_radio_6.isChecked(),
+                    self.layout_radio_7.isChecked(), self.layout_radio_8.isChecked(), self.layout_radio_9.isChecked(),
+                    self.layout_radio_10.isChecked()])
 
     def disable_size_radio_buttons(self):
         self.size_radio_6inch.setDisabled(True)
@@ -469,6 +480,10 @@ class ImageCollage(QMainWindow):
         self.layout_radio_4.setDisabled(True)
         self.layout_radio_5.setDisabled(True)
         self.layout_radio_6.setDisabled(True)
+        self.layout_radio_7.setDisabled(True)
+        self.layout_radio_8.setDisabled(True)
+        self.layout_radio_9.setDisabled(True)
+        self.layout_radio_10.setDisabled(True)
 
     def enable_layout_radio_buttons(self):
         self.layout_radio_1.setDisabled(False)
@@ -477,6 +492,10 @@ class ImageCollage(QMainWindow):
         self.layout_radio_4.setDisabled(False)
         self.layout_radio_5.setDisabled(False)
         self.layout_radio_6.setDisabled(False)
+        self.layout_radio_7.setDisabled(False)
+        self.layout_radio_8.setDisabled(False)
+        self.layout_radio_9.setDisabled(False)
+        self.layout_radio_10.setDisabled(False)
 
     def update_generate_button_state(self):
         # 检查所有参数是否选择，如果是则启用生成按钮，否则禁用
